@@ -196,3 +196,30 @@ $ git commit -m "My Django Girls app, first commit"
  create mode 100644 mysite/wsgi.py
 ```
 
+## GitHub에 코드 배포하기.
+- new repository 생성 후 업로드
+```
+$ git remote add origin https://github.com/<GitHub 사용자 이름>/my-first-blog.git
+$ git push -u origin master
+```
+
+
+
+## PythonAnywhere에 블로그 설정하기
+- PythonAnywhere(www.pythonanywhere.com)에서 무료 계정인 "초보자(Beginner)"로 회원가입.
+- 사용자 이름은 블로그 주소의 일부가 됨.
+  ex) 사용자 이름이 DPBell 이면 URL은 DPBell.pythonanywhere.com 이 되는 형식.
+
+
+
+## GitHub에서 PythonAnywhere로 코드 가져오기
+
+- PythonAnywhere에 가입하면 대시보드 또는 콘솔(Console)페이지가 있음.
+
+git add --all
+
+git commit -m "커밋 메세지"
+
+git remote add origin https://github.com/<your-github-username>/my-first-blog.git
+
+git push -u origin master
