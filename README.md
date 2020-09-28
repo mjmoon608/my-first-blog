@@ -202,7 +202,16 @@ $ git commit -m "My Django Girls app, first commit"
 $ git remote add origin https://github.com/<GitHub 사용자 이름>/my-first-blog.git
 $ git push -u origin master
 ```
+cf) VSCode에서 commit과 push 하는 법.
+```
+git add --all
 
+git commit -m "커밋 메세지"
+
+git remote add origin https://github.com/<your-github-username>/my-first-blog.git
+
+git push -u origin master
+```
 
 
 ## PythonAnywhere에 블로그 설정하기
@@ -215,11 +224,183 @@ $ git push -u origin master
 ## GitHub에서 PythonAnywhere로 코드 가져오기
 
 - PythonAnywhere에 가입하면 대시보드 또는 콘솔(Console)페이지가 있음.
+- PythonAnywhere의 Console에서 GitHub에 있는 저장소를 복제해 PythonAnywhere로 옮김.
+```
+git clone <내 GitHub Repository>
+```
 
-git add --all
+- PythonAnywhere에 올라간 Repository확인
+`tree <repository 이름>`
 
-git commit -m "커밋 메세지"
 
-git remote add origin https://github.com/<your-github-username>/my-first-blog.git
 
-git push -u origin master
+## PythonAnywhere에 가상환경(virtualenv) 생성하기
+- 로컬에서 작업하는 VSCode에서 사용하는 가상환경은 gitignore에 포함되어 있기 때문에 PythonAnywhere에서 사용할 가상환경 생성
+  `cd <repository 이름>`
+  `virtualenv --python=python3.6 <가상환경 이름>`
+  `source <가상환경 이름>/bin/activate` cf)윈도우의 경우 `source <가상환경 이름>/Scripts/activate`를 사용하지만 Linux, Mac에서는 Scripts대신 bin 사용
+- django 설치
+  `pip install django`
+
+
+  ## PythonAnywhere에서 데이터베이스 생성하기
+  - 로컬컴퓨터와 PythonAnywhere 서버는 서로 다른 데이터베이스를 사용함.
+  - 때문에 사용자 계정과 글은 로컬컴퓨터와 서버가 다를 수 있음.
+  - PythonAnywhere의 서버에서도 데이터베이스를 초기화 해야함.
+    `python manage.py migrate` -> `python manage.py createsuperuser`
+
+
+
+## web app으로 블로그 배포하기
+- 이제 코드는 PythonAnywhere 서버에 있고 서버에 가상환경과 정적파일도 모여있으며 데이터베이스까지 초기화 시킴 -> 웹 앱으로 배포할 준비 완료
+- PythonAnywhere 대시보드로 돌아가 Web apps를 클릭하고 Add a new web app 선택
+- 도메인 이름 확정 후(무료버전은 도메인 이름 변경 불가) manual Configuration(수동설정) 선택 후 Python 3.6 선택
+
+
+## 가상환경(virtualenv) 설정하기
+- PythonAnywhere 설정화면으로 이동함. 서버 앱에 변경사항이 있을 때 이 설정화면으로 들아가야 함.
+- 가상환경(virtualenv) 섹션에서 가상환경 경로 입력
+
+
+## WSGI 파일 설정하기
+- 장고는 `WSGI 프로토콜`을 사용해 작동한다.
+- 이 프로토콜은 파이썬을 이용한 웹 사이트를 서비스하기 위한 표준으로 PythonAnywhere에서도 지원함.
+- WSGI 설정 파일을 수정해 여태까지 만든 장고 블로그를 PythonAnywhere에서 인식하게 해야함.
+- web 탭에서 Code 섹션에 있는 `WSGI configuration file`의 경로를 클릭하면 에디터를 볼 수 있음.
+```
+# 모든 내용 삭제하고 아래 코드 복붙. <your-PythonAnywhere-username>에 내 PythonAnywhere 사용자 이름 쓰는 걸 잊지 말도록
+import os
+import sys
+
+path = '/home/<your-PythonAnywhere-username>/my-first-blog'  # PythonAnywhere 계정으로 바꾸세요.
+if path not in sys.path:
+    sys.path.append(path)
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mysite.settings'
+
+from django.core.wsgi import get_wsgi_application
+from django.contrib.staticfiles.handlers import StaticFilesHandler
+application = StaticFilesHandler(get_wsgi_application())
+```
+- 해당파일은 PythonAnywhere엑 웹 애플리케이션의 위치와 Django 설정 파일명을 알려주는 역할을 함.
+- `StaticFilesHandler`는 CSS를 다루기 위한 것으로 `runserver` 명령으로 로컬 개발 중에 자동으로 처리 됨.
+- 해당 문서의 뒷 부분에서 CSS를 작성할 때 정적 파일에 대해 좀 더 알아볼 것.
+- 저장을 한 뒤 Web 탭으로 돌아가고 Reload하기. -> 해당 URL로 접속시 애플리케이션 볼 수 있음.
+
+
+
+## 웹 사이트가 배포됨.
+- 웹 개발 작업과정은 로컬에서 변경하고, 변경 사항을 GitHub에 적용하고, 변경 사항을 실제 웹 서버로 가져온다. 이를 통해 실제 웹 사이트를 손상시키지 않고 작업하고 테스트 해볼 수 있다.
+
+
+
+## URL 이란
+- URL은 웹 주소임. 웹 사이트를 방문할 때마다 브라우저의 URL을 확인 가능함.
+- 인터넷의 모든 페이지는 고유한 URL을 가지고 있어야 함. 애플리케이션은 사용자가 URL을 입력하면 어떤 내용을 보여줘야 하는지 알고 있음.
+- 장고는 `URLconf (URL configuration)`를 사용함.
+- `URLconf`는 장고에서 URL과 일치하는 뷰를 찾기 위한 패턴들의 집합임.
+
+
+
+## 장고 URL은 어떻게 작동하는지
+- `mysite/urls.py`를 열면 아래의 코드가 존재할거임.
+```
+from django.contrib import admin
+from django.urls import path
+
+urlpatterns = [
+    path('admin/', admin.site.urls), # 관리자 URL
+]
+```
+- 장고는 `admin/`로 시작하는 모든 URL을 view와 대조해 찾아낸다.
+- 무수히 많은 URL이 `admin URL`에 포함될 수 있어 일일이 모두 쓸 수 없다. 때문에 정규표현식을 사용한다.
+
+
+
+## 나의 첫 번째 Django url
+- `http://127.0.0.1:8000/` 주소를 블로그 홈 페이지로 지정하고 여기에 글 목록을 보여줄 것임.
+- `mysite/urls.py` 파일을 깨끗한 상태로 유지하기 위해 `blog` 애플리케이션에서 메인 `mysite/urls.py` 파일로 url들을 가져올 것임
+- 먼저 `blog.urls`를 가져오는 코드를 추가해보자
+- `blog.urls`를 가져오려면 `include`함수가 필요함. `from django.urls` 행을 찾고 `import` 뒤에 `include` 함수 추가해라.
+- `path('', include('blog.urls'))` 덕에 `http://127.0.0.1:8000/`로 들어오는 모든 접속 요층을 `blog.urls`로 전송해 추가 명령을 찾을 것임.
+
+
+
+## blog.urls
+- `blog/urls.py`라는 새 파일을 생성한 뒤 아래 코드를 추가해라.
+```
+# 장고 함수인 path와 blog 애플리케이션에서 사용할 모든 views를 가져옴.
+from django.urls import path
+from . import views
+```
+
+- 후에 첫 번째 URL 패턴을 추가해라.
+```
+urlpatterns = [
+    path('', views.post_list, name='post_list'),
+]
+```
+- 이제 `post_list` 라는 `view`가 루트 URL에 할당이 되었음.
+- 해당 URL 패턴은 장고에게 누군가 웹 사이트에 `http://127.0.0.1:8000/`주소로 들어왔을 때 `views.post_list`를 보여주라고 말해줌.
+- `name='post_list'`는 URL에 이름을 붙인 것으로 뷰를 식별하는 역할을 함.
+- 뷰의 이름과 같을 수도 완전히 다를 수도 있음.
+- 앱의 각 URL마다 이름 짓는 것은 중요함. 고유한 이름을 붙여 외우고 부르기 쉽게 만들어야함. -> 프로젝트 후반에 사용.
+
+
+
+## 장고 뷰 만들기
+- 뷰(view)는 애플리케이션의 `로직`을 넣는 곳임.
+- 뷰는 우리가 만든 `모델`에서 필요한 정보를 받아와서 `템플릿`에 전달하는 역할을 함.
+- 뷰는 `views.py`파일 안에 생성함. 우리는 views를 `blog/views.py`파일에 추가할 것임.
+
+
+
+## blog/views.py
+- `blog/views.py`에서 간단한 view 생성
+```
+def post_list(request):
+    return render(request, 'blog/post_list.html', {})
+```
+- 해당 코드로 `post_list`라는 함수를 만듦. 이 함수는 `요청(request)`를 넘겨받아 `render`메서드를 호출함
+- 이 함수는 `render` 메서드를 호출하여 받은(return된) `blog/post_list.html` 텝플릿을 보여줌.
+
+
+
+## HTML 시작하기
+- 템플릿은 서로 다른 정보를 일정한 형태로 표시하기 위해 재사용 가능한 파일을 말함.
+- 예로 편지에도 같은 템플릿을 사용 가능함
+- 편지의 내용이나 수신인 주소는 달라져도 같은 디자인, 레이아웃을 사용하는 경우도 있기 때문임
+- 장고 템플릿 양식은 HTML을 사용함.
+
+
+
+## 첫 번째 템플릿
+- 템플릿은 `blog/templates/blog`디렉토리에 저장할 거임
+- `blog`디렉토리 안에 하위 디렉토리인 `templates`를 생성하고 `templates` 디렉토리 내 `blog`라는 하위 디렉토리를 생성하셈.
+- `blog/templats/blog` 디렉토리 내에 `post_list.html`파일을 생성.
+- 그리고 서버를 실행하여 홈페이지를 확인하면 빈 템플릿인걸 확인할 수 있음.
+```
+<html>
+    <p>Hi there!</p>
+    <p>It works!</p>
+</html>
+```
+- 해당 내용처럼 html 작성시 변경사항들을 확인할 수 있음.
+
+
+
+## Head & body
+- head는 문서 정보를 가지고 있지만, 웹 페이지에서 보이지 않는 정보들을 담는 영역 -> 브라우저에 페이지에 대한 설정을 알려줌.
+- body는 웹 페이지에서 직접적으로 보이는 내용이 들어감. 웹 페이지의 내용은 모두 이 body 태그 안에 들어감. -> 실제 페이지에 보여줄 내용을 알려줌.
+- `blog/templates/blog/post_list.html`
+```
+<html>
+    <head>
+        <title>Ola's blog</title>
+    </head>
+    <body>
+        <p>Hi there!</p>
+        <p>It works!</p>
+    </body>
+</html>
+```
